@@ -1,0 +1,357 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>FX Calculator</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      min-height: 100vh;
+      background: linear-gradient(160deg, #c2d4f0 0%, #cdc6f0 50%, #d8c8ee 100%);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Rounded', 'Segoe UI', sans-serif;
+      padding: 20px;
+    }
+
+    .app {
+      width: 100%;
+      max-width: 480px;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    /* ── Currency Tabs ── */
+    .currency-tabs {
+      display: flex;
+      gap: 10px;
+      justify-content: center;
+    }
+
+    .tab {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      padding: 14px 8px;
+      background: rgba(255,255,255,0.65);
+      border: none;
+      border-radius: 20px;
+      cursor: pointer;
+      transition: background 0.15s, transform 0.1s;
+      backdrop-filter: blur(8px);
+    }
+
+    .tab:active { transform: scale(0.95); }
+
+    .tab.active {
+      background: #3d5af1;
+    }
+
+    .tab-flag {
+      font-size: 28px;
+      line-height: 1;
+    }
+
+    .tab-code {
+      font-size: 12px;
+      font-weight: 700;
+      color: #444;
+      letter-spacing: 0.3px;
+    }
+
+    .tab.active .tab-code {
+      color: #fff;
+    }
+
+    /* ── Display Card ── */
+    .display-card {
+      background: rgba(255,255,255,0.55);
+      backdrop-filter: blur(16px);
+      border-radius: 28px;
+      padding: 20px 24px 24px;
+    }
+
+    .display-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 12px;
+    }
+
+    .clear-btn {
+      background: rgba(0,0,0,0.08);
+      border: none;
+      border-radius: 20px;
+      padding: 6px 16px;
+      font-size: 13px;
+      font-weight: 600;
+      color: #555;
+      cursor: pointer;
+      letter-spacing: 0.5px;
+      transition: background 0.15s;
+    }
+
+    .clear-btn:hover { background: rgba(0,0,0,0.13); }
+
+    .currency-name {
+      font-size: 15px;
+      font-style: italic;
+      color: #777;
+    }
+
+    .input-row {
+      text-align: right;
+      margin-bottom: 10px;
+    }
+
+    .input-amount {
+      font-size: 36px;
+      font-weight: 500;
+      color: #222;
+      letter-spacing: -0.5px;
+    }
+
+    .input-currency {
+      font-size: 20px;
+      color: #999;
+      margin-left: 6px;
+      font-weight: 400;
+    }
+
+    .separator {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 10px;
+    }
+
+    .sep-line {
+      flex: 1;
+      height: 1px;
+      background: rgba(0,0,0,0.12);
+    }
+
+    .sep-eq {
+      font-size: 16px;
+      color: #bbb;
+      font-weight: 500;
+    }
+
+    .result-row {
+      text-align: right;
+      margin-bottom: 12px;
+    }
+
+    .result-symbol {
+      font-size: 26px;
+      font-weight: 700;
+      color: #3d5af1;
+      vertical-align: baseline;
+      margin-right: 4px;
+    }
+
+    .result-amount {
+      font-size: 52px;
+      font-weight: 800;
+      color: #111;
+      letter-spacing: -2px;
+      line-height: 1;
+    }
+
+    .rate-info {
+      font-size: 13px;
+      color: #888;
+    }
+
+    /* ── Numpad ── */
+    .numpad {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 10px;
+    }
+
+    .key {
+      aspect-ratio: 1 / 0.72;
+      background: rgba(255,255,255,0.65);
+      backdrop-filter: blur(8px);
+      border: none;
+      border-radius: 20px;
+      font-size: 28px;
+      font-weight: 500;
+      color: #222;
+      cursor: pointer;
+      transition: background 0.1s, transform 0.1s;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .key:active {
+      transform: scale(0.93);
+      background: rgba(255,255,255,0.9);
+    }
+
+    .key.backspace {
+      background: rgba(200,210,240,0.7);
+      font-size: 22px;
+    }
+
+    .key.backspace:active {
+      background: rgba(180,195,235,0.9);
+    }
+
+    .key.red {
+      background: #e06055;
+      color: #fff;
+    }
+
+    .key.red:active { background: #c94f45; }
+
+    .key.kitty {
+      background: #f8b8c8;
+      flex-direction: column;
+      gap: 2px;
+      font-size: 22px;
+    }
+
+    .key.kitty .kitty-img  { width: 52px; height: auto; }
+    .key.kitty .kitty-num  { font-size: 20px; font-weight: 600; color: #c04070; line-height: 1; }
+
+    .key.kitty:active { background: #f5a0b8; }
+  </style>
+</head>
+<body>
+<div class="app">
+
+  <!-- Currency Tabs -->
+  <div class="currency-tabs" id="tabs"></div>
+
+  <!-- Display -->
+  <div class="display-card">
+    <div class="display-top">
+      <button class="clear-btn" onclick="clearInput()">CLEAR</button>
+      <span class="currency-name" id="currencyName">Singapore Dollar</span>
+    </div>
+
+    <div class="input-row">
+      <span class="input-amount" id="inputAmount">0</span>
+      <span class="input-currency" id="inputCurrency">SGD</span>
+    </div>
+
+    <div class="separator">
+      <div class="sep-line"></div>
+      <span class="sep-eq">=</span>
+      <div class="sep-line"></div>
+    </div>
+
+    <div class="result-row">
+      <span class="result-symbol">฿</span>
+      <span class="result-amount" id="resultAmount">0.00</span>
+    </div>
+
+    <div class="rate-info" id="rateInfo">1 SGD = ฿27</div>
+  </div>
+
+  <!-- Numpad -->
+  <div class="numpad">
+    <button class="key red" onclick="pressKey('7')">7</button>
+    <button class="key" onclick="pressKey('8')">8</button>
+    <button class="key" onclick="pressKey('9')">9</button>
+
+    <button class="key" onclick="pressKey('4')">4</button>
+    <button class="key" onclick="pressKey('5')">5</button>
+    <button class="key" onclick="pressKey('6')">6</button>
+
+    <button class="key" onclick="pressKey('1')">1</button>
+    <button class="key" onclick="pressKey('2')">2</button>
+    <button class="key kitty" onclick="pressKey('3')">
+      <img class="kitty-img" src="kitty.png" alt="Hello Kitty">
+      <span class="kitty-num">3</span>
+    </button>
+
+    <button class="key" onclick="pressKey('.')">.</button>
+    <button class="key" onclick="pressKey('0')">0</button>
+    <button class="key backspace" onclick="pressBackspace()">⌫</button>
+  </div>
+
+</div>
+
+<script>
+  const CURRENCIES = [
+    { code: 'SGD', name: 'Singapore Dollar',  flag: '🇸🇬', rate: 27   },
+    { code: 'MYR', name: 'Malaysian Ringgit', flag: '🇲🇾', rate: 7.5  },
+    { code: 'HKD', name: 'Hong Kong Dollar',  flag: '🇭🇰', rate: 4.6  },
+    { code: 'JPY', name: 'Japanese Yen',      flag: '🇯🇵', rate: 0.23 },
+    { code: 'USD', name: 'US Dollar',         flag: '🇺🇸', rate: 35   },
+  ];
+
+  let currentIndex = 0;
+  let inputStr = '0';
+
+  function buildTabs() {
+    const container = document.getElementById('tabs');
+    container.innerHTML = CURRENCIES.map((c, i) => `
+      <button class="tab ${i === currentIndex ? 'active' : ''}" onclick="selectCurrency(${i})">
+        <span class="tab-flag">${c.flag}</span>
+        <span class="tab-code">${c.code}</span>
+      </button>
+    `).join('');
+  }
+
+  function selectCurrency(i) {
+    currentIndex = i;
+    buildTabs();
+    updateDisplay();
+  }
+
+  function pressKey(k) {
+    if (k === '.') {
+      if (inputStr.includes('.')) return;
+      inputStr += '.';
+    } else {
+      if (inputStr === '0') inputStr = k;
+      else inputStr += k;
+    }
+    // Cap to reasonable length
+    if (inputStr.replace('.','').length > 10) return;
+    updateDisplay();
+  }
+
+  function pressBackspace() {
+    if (inputStr.length <= 1) { inputStr = '0'; }
+    else { inputStr = inputStr.slice(0, -1); }
+    updateDisplay();
+  }
+
+  function clearInput() {
+    inputStr = '0';
+    updateDisplay();
+  }
+
+  function updateDisplay() {
+    const cur = CURRENCIES[currentIndex];
+    const amount = parseFloat(inputStr) || 0;
+    const result = amount * cur.rate;
+
+    document.getElementById('inputAmount').textContent = inputStr;
+    document.getElementById('inputCurrency').textContent = cur.code;
+    document.getElementById('currencyName').textContent = cur.name;
+    document.getElementById('resultAmount').textContent = result.toLocaleString('en-US', {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    });
+    document.getElementById('rateInfo').textContent = `1 ${cur.code} = ฿${cur.rate}`;
+  }
+
+  buildTabs();
+  updateDisplay();
+</script>
+</body>
+</html>
